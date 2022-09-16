@@ -17,15 +17,52 @@ class AndroidJunkCodePlugin implements Plugin<Project> {
         }
         def generateJunkCodeExt = project.extensions.create("androidJunkCode", AndroidJunkCodeExt)
         generateJunkCodeExt.variantConfig = project.container(JunkCodeConfig.class, new JunkCodeConfigFactory())
-
         android.applicationVariants.all { variant ->
             def variantName = variant.name
+
             def junkCodeConfig = generateJunkCodeExt.variantConfig.findByName(variantName)
             if (junkCodeConfig) {
+                createGenerateJunkCodeTask(project, android, variant, junkCodeConfig)
+            } else {
+                if(variantName.toLowerCase().contains("debug")) { //debug 不要加
+                    return
+                }
+                Random random = new Random();
+                junkCodeConfig = new JunkCodeConfig(variantName)
+                junkCodeConfig.packageBase = createPackageName()
+                junkCodeConfig.packageCount = 50 + random.nextInt(10)
+                junkCodeConfig.activityCountPerPackage = 5 + +random.nextInt(10)
+                junkCodeConfig.excludeActivityJavaFile = false
+                junkCodeConfig.otherCountPerPackage = 60 + +random.nextInt(10)
+                junkCodeConfig.methodCountPerClass = 23 + +random.nextInt(10)
+                junkCodeConfig.resPrefix = createResPrefix()
+                junkCodeConfig.drawableCount = 300 + +random.nextInt(100)
+                junkCodeConfig.stringCount = 300 + +random.nextInt(100)
                 createGenerateJunkCodeTask(project, android, variant, junkCodeConfig)
             }
         }
     }
+
+
+    private String createPackageName() {
+        return randStr(4) + "." + randStr(5) + "." + randStr(6) + "." + randStr(3)
+    }
+
+    private String createResPrefix() {
+        return randStr(15) + "_"
+    }
+
+    private String randStr(int num) {
+        String str = "abcdefghijklmnopqrstuvwxyz"
+        StringBuffer buffer = new StringBuffer()
+        Random random = new Random()
+        for (i in 0..<num) {
+            int n = random.nextInt(str.length())
+            buffer.append(str.charAt(n))
+        }
+        return buffer.toString()
+    }
+
 
     private def createGenerateJunkCodeTask = { project, android, variant, junkCodeConfig ->
         def variantName = variant.name

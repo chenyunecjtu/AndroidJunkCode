@@ -63,10 +63,12 @@ class AndroidJunkCodeTask extends DefaultTask {
             for (int j = 0; j < config.otherCountPerPackage; j++) {
                 def className = generateName(j).capitalize()
                 def typeBuilder = TypeSpec.classBuilder(className)
+                typeBuilder.addAnnotation(getKeepClassName())
                 typeBuilder.addModifiers(Modifier.PUBLIC)
                 for (int k = 0; k < config.methodCountPerClass; k++) {
                     def methodName = generateName(k)
                     def methodBuilder = MethodSpec.methodBuilder(methodName)
+                    methodBuilder.addAnnotation(getKeepClassName())
                     generateMethods(methodBuilder)
                     typeBuilder.addMethod(methodBuilder.build())
                 }
@@ -85,11 +87,11 @@ class AndroidJunkCodeTask extends DefaultTask {
             case 0:
                 methodBuilder.addStatement("long now = \$T.currentTimeMillis()", System.class)
                         .beginControlFlow("if (\$T.currentTimeMillis() < now)", System.class)
-                        .addStatement("\$T.out.println(\$S)", System.class, "Time travelling, woo hoo!")
+                        .addStatement("\$T.out.println(\$S)", System.class, "Time travelling, woo hoo!" + randStr(10))
                         .nextControlFlow("else if (\$T.currentTimeMillis() == now)", System.class)
-                        .addStatement("\$T.out.println(\$S)", System.class, "Time stood still!")
+                        .addStatement("\$T.out.println(\$S)", System.class, "Time stood still!" + randStr(10))
                         .nextControlFlow("else")
-                        .addStatement("\$T.out.println(\$S)", System.class, "Ok, time still moving forward")
+                        .addStatement("\$T.out.println(\$S)", System.class, "Ok, time still moving forward" + randStr(10))
                         .endControlFlow()
                 break
             case 1:
@@ -101,7 +103,7 @@ class AndroidJunkCodeTask extends DefaultTask {
                 break
             case 2:
                 methodBuilder.beginControlFlow("try")
-                        .addStatement("throw new Exception(\$S)", "Failed")
+                        .addStatement("throw new Exception(\$S)", "Failed" + randStr(10))
                         .nextControlFlow("catch (\$T e)", Exception.class)
                         .addStatement("throw new \$T(e)", RuntimeException.class)
                         .endControlFlow()
@@ -114,13 +116,13 @@ class AndroidJunkCodeTask extends DefaultTask {
                 methodBuilder.addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                         .returns(void.class)
                         .addParameter(String[].class, "args")
-                        .addStatement("\$T.out.println(\$S)", System.class, "Hello")
+                        .addStatement("\$T.out.println(\$S)", System.class, "Hello" + randStr(10))
                 break
             default:
                 methodBuilder.addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                         .returns(void.class)
                         .addParameter(String[].class, "args")
-                        .addStatement("\$T.out.println(\$S)", System.class, "Hello")
+                        .addStatement("\$T.out.println(\$S)", System.class, "Hello"+ randStr(10))
         }
     }
 
@@ -140,6 +142,7 @@ class AndroidJunkCodeTask extends DefaultTask {
             typeBuilder.addModifiers(Modifier.PUBLIC)
             //onCreate方法
             def bundleClassName = ClassName.get("android.os", "Bundle")
+            typeBuilder.addAnnotation(getKeepClassName())
             typeBuilder.addMethod(MethodSpec.methodBuilder("onCreate")
                     .addAnnotation(Override.class)
                     .addModifiers(Modifier.PROTECTED)
@@ -192,7 +195,15 @@ class AndroidJunkCodeTask extends DefaultTask {
         FileWriter writer
         try {
             writer = new FileWriter(drawableFile)
-            def template = ResTemplate.DRAWABLE
+
+//            def template = ResTemplate.DRAWABLE
+            def binding = [
+                    width : random.nextInt(100) + 20,
+                    height: random.nextInt(200) + 20,
+                    vWidth: random.nextInt(300) + 20,
+                    vHeight: random.nextInt(400) + 20,
+            ]
+            def template = makeTemplate(ResTemplate.DRAWABLE, binding)
             writer.write(template.toString())
         } catch (Exception e) {
             e.printStackTrace()
@@ -219,7 +230,11 @@ class AndroidJunkCodeTask extends DefaultTask {
         FileWriter writer
         try {
             writer = new FileWriter(layoutFile)
-            def template = ResTemplate.LAYOUT_TEMPLATE
+//            def template = ResTemplate.LAYOUT_TEMPLATE
+            def binding = [
+                    textId : generateId(10),
+            ]
+            def template = makeTemplate(ResTemplate.LAYOUT_TEMPLATE, binding)
             writer.write(template.toString())
         } catch (Exception e) {
             e.printStackTrace()
@@ -384,5 +399,28 @@ class AndroidJunkCodeTask extends DefaultTask {
         }
         sb.append(index.toString())
         return sb.toString()
+    }
+
+    static String generateId(int index) {
+        def sb = new StringBuffer()
+        for (i in 0..index) {
+            sb.append(abc[random.nextInt(abc.size())])
+        }
+        return sb.toString()
+    }
+
+    private ClassName getKeepClassName() {
+        return ClassName.get("androidx.annotation", "Keep")
+    }
+
+    private static String randStr(int num) {
+        String str = "abcdefghijklmnopqrstuvwxyz1234567890-=~!@#%^&*()_+<>?,./:[]{}|"
+        StringBuffer buffer = new StringBuffer()
+        Random random = new Random()
+        for (i in 0..<num) {
+            int n = random.nextInt(str.length())
+            buffer.append(str.charAt(n))
+        }
+        return buffer.toString()
     }
 }
