@@ -1,0 +1,28 @@
+apply plugin: 'maven'
+
+def NAME = "androidJunkCode"
+def GROUPID = "io.github.chenyunecjtu"
+def ARTIFACTID = "android-junk-code"
+def VERSION = "1.2.0"
+
+def user = System.getenv("MAVEN_USER")
+def apiKey = System.getenv("MAVEN_APIKEY")
+def repo = System.getenv("MAVEN_REPO")
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            pom.groupId = GROUPID
+            pom.artifactId = ARTIFACTID
+            pom.version = VERSION
+            repository(url: repo) {
+                authentication(userName: user, password: apiKey)
+            }
+        }
+    }
+}
+
+
+
+
+
+

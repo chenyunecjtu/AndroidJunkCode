@@ -9,7 +9,7 @@ buildscript {
 }
 
 apply plugin: 'groovy'
-apply plugin: "com.vanniktech.maven.publish"
+apply from: "upload.gradle"
 
 java {
     sourceCompatibility JavaVersion.VERSION_1_8
